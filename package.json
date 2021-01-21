@@ -35,10 +35,5 @@
     "travis": "yarn pretty-lint && jest --coverage && codecov",
     "pretty-lint": "prettier --check lib/*.js lib/__tests__/*.js",
     "pretty": "prettier --loglevel warn --write lib/*.js lib/__tests__/*.js"
-  },
-  "jest": {
-    "transform": {
-      "__tests__[\\\\/].+\\.js$": "babel-jest"
-    }
   }
 }
