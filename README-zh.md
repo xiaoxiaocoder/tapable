@@ -1,8 +1,6 @@
 # Tapable
 
-The tapable package expose many Hook classes, which can be used to create hooks for plugins.
-
-tapable包暴露了很多钩子方法, 这些钩子可以用于创建插件的钩子.  
+tapable提供了很多钩子方法，这些方法可以用于创建插件的钩子。
 
 ``` javascript
 const {
@@ -28,17 +26,13 @@ npm install --save tapable
 
 ## Usage
 
-All Hook constructors take one optional argument, which is a list of argument names as strings.
-
-所有钩子的构造函数使用一个可选参数, 该参数是一个由参数名称(字符串形式)构成的数组.
+所有钩子的构造函数使用一个可选参数，该参数是一个由参数名称(字符串形式)构成的数组。
 
 ``` js
 const hook = new SyncHook(["arg1", "arg2", "arg3"]);
 ```
 
-The best practice is to expose all hooks of a class in a `hooks` property:
-
-最佳实践是在一个类的`hooks`属性中暴露所有的钩子.
+最佳实践是在一个类的`hooks`属性中暴露所有的钩子。
 
 ``` js
 class Car {
@@ -54,9 +48,7 @@ class Car {
 }
 ```
 
-Other people can now use these hooks:
-
-现在, 其他人可以按照如下方式使用这些钩子:
+这样, 其他人可以按照如下方式使用这些钩子:
 
 ``` js
 const myCar = new Car();
@@ -65,19 +57,15 @@ const myCar = new Car();
 myCar.hooks.brake.tap("WarningLampPlugin", () => warningLamp.on());
 ```
 
-It's required to pass a name to identify the plugin/reason.
+注册方法时需要传入一个名字用于区分不同的插件。
 
-需要传入一个名字用于区分插件.
-
-You may receive arguments:
-你可能会受到如下参数:
+可能接收到到如下参数:
 
 ``` js
 myCar.hooks.accelerate.tap("LoggerPlugin", newSpeed => console.log(`Accelerating to ${newSpeed}`));
 ```
 
-For sync hooks, `tap` is the only valid method to add a plugin. Async hooks also support async plugins:
-对于同步钩子, `tap`是唯一合法的方法来增加一个插件. 异步钩子同时也支持异步插件:
+对于同步钩子, `tap`是唯一合法的方法来增加一个插件。 异步钩子同时也支持异步插件:
 
 ``` js
 myCar.hooks.calculateRoutes.tapPromise("GoogleMapsPlugin", (source, target, routesList) => {
@@ -96,7 +84,6 @@ myCar.hooks.calculateRoutes.tapAsync("BingMapsPlugin", (source, target, routesLi
 });
 
 // You can still use sync plugins
-// 你仍可以使用同步钩子
 myCar.hooks.calculateRoutes.tap("CachedRoutesPlugin", (source, target, routesList) => {
 	const cachedRoute = cache.get(source, target);
 	if(cachedRoute)
@@ -105,19 +92,16 @@ myCar.hooks.calculateRoutes.tap("CachedRoutesPlugin", (source, target, routesLis
 ```
 The class declaring these hooks need to call them:
 
-声明的这些钩子, 可以按照如下方式来调用:
+声明的这些钩子, 调用时需要按照如下方式:
 
 ``` js
 class Car {
 	/**
-	  * You won't get returned value from SyncHook or AsyncParallelHook,
-	  * to do that, use SyncWaterfallHook and AsyncSeriesWaterfallHook respectively
 		*	不可以在SyncHook或者AsyncParallelHook返回值
 		* 如果需要返回值, 可以使用SyncWaterfallHook或者AsyncSeriesWaterfallHook
 	 **/
 
 	setSpeed(newSpeed) {
-		// following call returns undefined even when you returned values
 		// 即便你的代码返回了值, 下面的执行结果依然会返回undefined
 		this.hooks.accelerate.call(newSpeed);
 	}
@@ -141,61 +125,40 @@ class Car {
 }
 ```
 
-The Hook will compile a method with the most efficient way of running your plugins. It generates code depending on:
-* The number of registered plugins (none, one, many)
-* The kind of registered plugins (sync, async, promise)
-* The used call method (sync, async, promise)
-* The number of arguments
-* Whether interception is used
-
-Hook被编译成最有效的执行方式. 她生成代码取决于:
-*	被注册的插件的数量(没有, 一个或多个)
+在你的拆件中, Hook会被编译成最有效的执行方式. 编译逻辑(用于生成执行代码)取决于:
+*	注册的插件的数量(没有, 一个或多个)
 *	所注册的插件的类型(同步, 异步或promise)
-*	调用方法的类型(同步, 异步或promise)
+*	执行Hook的调用方法(同步, 异步或promise)
 *	参数的数量
 *	是否使用了拦截
 
-This ensures fastest possible execution.
-
-以上这些条件是个更快的执行成为可能
+这些条件会使得执行效率更快成为可能
 
 ## Hook types
 
-Each hook can be tapped with one or several functions. How they are executed depends on the hook type:
+每个钩子可以注册一个或多个方法, 钩子的类型会决定它们如何被执行:
 
-每个钩子可以被一个或多个方法注册, 他们怎么执行取决于钩子的类型:
+* 基础钩子(名称中没有"Waterfall", "Bail"或者"Loop"). 这个钩子会依次执行每一个注册方法.
 
-* Basic hook (without “Waterfall”, “Bail” or “Loop” in its name). This hook simply calls every function it tapped in a row.
-* 基础钩子(名称中没有"Waterfall", "Bail"或者"Loop"). 这个钩子简单的执行每一个方法在它的注册的方法中.
+* __Waterfall__. 一个瀑布钩子同样会依次调用注册的方法, 但是与基础钩子不同是, 它会将上个方法的返回值传递给下个方法
 
-* __Waterfall__. A waterfall hook also calls each tapped function in a row. Unlike the basic hook, it passes a return value from each function to the next function.
-* __Waterfall__. 一个管道式钩子同样也可以依次被调用, 与基础钩子不同, 它会将上个方法的返回值传递给下一个方法
+* __Bail__. 一个bail钩子允许提前退出. 当任意一个注册的方法返回非undefined, bail钩子会停止执行后续方法
 
-* __Bail__. A bail hook allows exiting early. When any of the tapped function returns anything, the bail hook will stop executing the remaining ones.
-* __Bail__. 一个竞速钩子
+* __Loop__. 当循环钩子注册的方法返回了非undefined, 钩子会重新从第一个方法执行. 它会一直执行直到所有插件返回undefined.
 
-* __Loop__. When a plugin in a loop hook returns a non-undefined value the hook will restart from the first plugin. It will loop until all plugins return undefined.
-* 循环钩子
+此外, 钩子函数又分为同步和异步两种. 比如: "Sync", "AsyncSeries", "AsyncParallel”钩子函数。
 
-Additionally, hooks can be synchronous or asynchronous. To reflect this, there’re “Sync”, “AsyncSeries”, and “AsyncParallel” hook classes:
+* __Sync__. 同步钩子只能注册同步方法(使用方式: `myHook.tap()`)
 
-* __Sync__. A sync hook can only be tapped with synchronous functions (using `myHook.tap()`).
-* 同步钩子
+* __AsyncSeries__. 异步串行钩子可以注册同步的, 基于回调的或者基于Promised的方法(使用方式: `myHook.tap()`, `myHook.tapAsync()`或`myHook.tapPromise()`).  调用时会异步的依次执行每一个注册的方法.
 
-* __AsyncSeries__. An async-series hook can be tapped with synchronous, callback-based and promise-based functions (using `myHook.tap()`, `myHook.tapAsync()` and `myHook.tapPromise()`). They call each async method in a row.
-* 异步串行
+* __AsyncParallel__. 异步并行钩子同样也可以注册同步的, 基于回调的和基于promise的方法(使用方式: `myHook.tap()`, `myHook.tapAsync()`和`myHook.tapPromise()`). 但是, 它会以并行的方式执行每个异步方法.
 
-* __AsyncParallel__. An async-parallel hook can also be tapped with synchronous, callback-based and promise-based functions (using `myHook.tap()`, `myHook.tapAsync()` and `myHook.tapPromise()`). However, they run each async method in parallel.
-* 异步并行
-
-The hook type is reflected in its class name. E.g., `AsyncSeriesWaterfallHook` allows asynchronous functions and runs them in series, passing each function’s return value into the next function.
-
+钩子类型可以通过类名反映出来. 比如: `AsyncSeriesWaterfallHook` 可以注册异步方法和串行执行, 会把注册方法的返回值传递给下一个方法。
 
 ## Interception
 
-All Hooks offer an additional interception API:
-
-参数类型见下方HookInterceptor设计
+所有钩子提供了额外的拦截API:
 
 ``` js
 myCar.hooks.calculateRoutes.intercept({
@@ -210,20 +173,18 @@ myCar.hooks.calculateRoutes.intercept({
 })
 ```
 
-**call**: `(...args) => void` Adding `call` to your interceptor will trigger when hooks are triggered. You have access to the hooks arguments.
+**call**: `(...args) => void`  拦截器中的`call`方法，会在钩子函数执行call方法时(所有注册方法执行前)被触发，传递给钩子的参数会被当做参数传入。
 
-**tap**: `(tap: Tap) => void` Adding `tap` to your interceptor will trigger when a plugin taps into a hook. Provided is the `Tap` object. `Tap` object can't be changed.
 
-**loop**: `(...args) => void` Adding `loop` to your interceptor will trigger for each loop of a looping hook.
+**tap**: `(tap: Tap) => void` 拦截器中的`tap`方法，会在每一个注册方法执行时他都会被触发。 `Tap`对象会作为参数传入，`Tap`对象不可修改。
 
-**register**: `(tap: Tap) => Tap | undefined` Adding `register` to your interceptor will trigger for each added `Tap` and allows to modify it.
+**loop**: `(...args) => void` 拦截器中的`loop`方法会在每个注册方法被执行时被触发。
+
+**register**: `(tap: Tap) => Tap | undefined` 当拦截器中有`register`方法时，当每次添加新的`Tap`(注册事件)时会调用它. 该方法允许修改传入的Tap对象。
 
 ## Context
 
-Plugins and interceptors can opt-in to access an optional `context` object, which can be used to pass arbitrary values to subsequent plugins and interceptors.
-
-arbitrary: 任意的
-subsequent: 之后的
+插件和拦截器可以选择使用可选参数`context`，它可以用于传递任意值给后续的插件和拦截器。
 
 ``` js
 myCar.hooks.accelerate.intercept({
@@ -255,7 +216,7 @@ myCar.hooks.accelerate.tap({
 
 ## HookMap
 
-A HookMap is a helper class for a Map with Hooks
+HookMap是一个Map形式的Hooks集合帮助类。
 
 ``` js
 const keyedHook = new HookMap(key => new SyncHook(["arg"]))

@@ -58,7 +58,7 @@ syncHook.call("panda", 18);
 - SyncHook 串行同步执行, 依次执行注册的事件
 - SyncBailHook 串行同步执行, 如果事件处理函数执行时有一个不为空(返回值不为 undefined), 则结束执行队列
 - SyncWaterfallHook 串行同步执行, 上一个事件处理函数的返回值作为参数传递给下一个事件处理函数
-- SyncLoopHook 串行同步执行, 事件处理函数返回 true 表示继续循环, 即新欢执行当前时间处理函数, 返回`undefined`表示循环结束, 与`SyncBailHook`不同的是, `SyncBailHook`只是决定是否继续行下执行后面的事件处理函数, 而`SyncLoopHook`的循环是指循环执行每一个时间吹函数, 知道返回`undefined`为止, 才会技术向下执行其他时间处理函数.
+- SyncLoopHook 串行同步执行, 事件处理函数返回 true 表示继续循环, 即新执行当前时间处理函数, 返回`undefined`表示循环结束, 与`SyncBailHook`不同的是, `SyncBailHook`只是决定是否继续行下执行后面的事件处理函数, 而`SyncLoopHook`的循环是指循环执行每一个事件函数, 直到返回`undefined`为止, 才会技术向下执行其他时间处理函数.
 
 Async 类型钩子
 
